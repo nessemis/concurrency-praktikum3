@@ -1,9 +1,15 @@
 #define GLINTEROP
 
+
+void BitSet( __global uint* buf, uint x, uint y, uint pw ) { buf[y * pw + (x >> 5)] |= 1 << (int)(x & 31); }
+
+uint GetBit( __global uint* buf, uint x, uint y , uint pw) { return (buf[y * pw + (x >> 5)] >> (int)(x & 31)) & 1; }
+
+
 #ifdef GLINTEROP
-__kernel void device_function( write_only image2d_t a, float t )
+__kernel void device_function( write_only image2d_t a, __global uint* pat, __global uint* sec, uint pw, uint ph, float t )
 #else
-__kernel void device_function( __global int* a, float t )
+__kernel void device_function( __global int* a, __global uint* pat, __global uint* sec, uint pw, uint ph, float t )
 #endif
 {
 	// adapted from inigo quilez - iq/2013
@@ -34,13 +40,22 @@ __kernel void device_function( __global int* a, float t )
 		l = mix( l, sl, al );
 		col += .5f + .5f * cos( 3.f + l * 0.15f + (float3)( .0f, .6f, 1.f ) );
 	}
+    
+    if(GetBit(sec,(uint)idx,(uint)idy,pw)==1 )
+        col = (float3)(1.0f,1.0f,1.0);
+    else
+        col = (float3)(0.0f,0.0f,0.0f);
+    
+    
+    
+    
 #ifdef GLINTEROP
 	int2 pos = (int2)(idx,idy);
-	write_imagef( a, pos, (float4)(col * (1.0f / 16.0f), 1.0f ) );
+	write_imagef( a, pos, (float4)(col , 1.0f ) );
 #else
-	int r = (int)clamp( 16.0f * col.x, 0.f, 255.f );
-	int g = (int)clamp( 16.0f * col.y, 0.f, 255.f );
-	int b = (int)clamp( 16.0f * col.z, 0.f, 255.f );
+	int r = (int)clamp(  col.x, 0.f, 255.f );
+	int g = (int)clamp(  col.y, 0.f, 255.f );
+	int b = (int)clamp(  col.z, 0.f, 255.f );
 	a[id] = (r << 16) + (g << 8) + b;
 #endif
 }

@@ -34,6 +34,10 @@ class Game
     uint[] second;
     uint pw, ph; // note: pw is in uints; width in bits is 32 this value.
 
+        void BitSet(uint x, uint y) { pattern[y * pw + (x >> 5)] |= 1U << (int)(x & 31); }
+        // helper function for getting one bit from the secondary pattern buffer
+        uint GetBit(uint x, uint y) { return (second[y * pw + (x >> 5)] >> (int)(x & 31)) & 1U; }
+
         public void readGoLFile()
     {
         StreamReader sr = new StreamReader("../../data/turing_js_r.rle");

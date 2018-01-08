@@ -30,8 +30,8 @@ namespace Template
         {
             readGoLFile();
             Console.WriteLine("Creating a new buffer with size: " + (pw * ph));
-            patternData = new OpenCLBuffer<uint>(ocl, pattern, (int)(pw * ph));
-            secondData = new OpenCLBuffer<uint>(ocl, second,(int)(pw * ph));
+            patternData = new OpenCLBuffer<uint>(ocl, pattern);
+            secondData = new OpenCLBuffer<uint>(ocl, second);
             
         }
 
@@ -124,7 +124,7 @@ namespace Template
             kernel.SetArgument(5, t);
             t += 0.1f;
 
-           
+            secondData.CopyToDevice();
 
             // execute kernel
             long[] workSize = { 512, 512 };

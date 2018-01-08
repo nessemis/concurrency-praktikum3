@@ -5,6 +5,24 @@ void BitSet( __global uint* buf, uint x, uint y, uint pw ) { buf[y * pw + (x >> 
 
 uint GetBit( __global uint* buf, uint x, uint y , uint pw) { return (buf[y * pw + (x >> 5)] >> (int)(x & 31)) & 1; }
 
+void Simulate( __global uint* pat , __global uint* sec, uint pw, uint ph, uint xc , uint yc)
+{
+    int height = ph;
+    int width = pw * 32;
+
+    pat[yc * pw + (xc >> 5)] &= ~(1 << (int)(xc & 31));
+
+    if(xc > width -1 || yc > height -1 || xc < 1 || yc < 1){return;} 
+
+
+    uint n = GetBit(sec, xc - 1, yc - 1 ,pw) + GetBit(sec ,xc, yc - 1,pw) + GetBit(sec ,xc + 1, yc - 1,pw) + GetBit(sec ,xc - 1, yc,pw) +
+                GetBit(sec,xc + 1, yc,pw) + GetBit(sec,xc - 1, yc + 1,pw) + GetBit(sec,xc, yc + 1,pw) + GetBit(sec,xc + 1, yc + 1,pw);
+    if ((GetBit(sec,xc, yc ,pw) == 1 && n == 2) || n == 3) BitSet(pat,xc , yc,pw);
+        
+
+}
+
+
 
 #ifdef GLINTEROP
 __kernel void device_function( write_only image2d_t a, __global uint* pat, __global uint* sec, uint pw, uint ph, float t )
@@ -13,14 +31,21 @@ __kernel void device_function( __global int* a, __global uint* pat, __global uin
 #endif
 {
 
+
 	int idx = get_global_id( 0 );
 	int idy = get_global_id( 1 );
-	int id = idx + 512 * idy;
-	if (id >= (512 * 512)) return;
+	
+    Simulate(pat, sec , pw, ph, idx, idy);
+    
+    
+	if (idx >= 512 || idy >= 512) return;
 
+    
+    
+    
 	float3 col = (float3)( 0.f, 0.f, 0.f );
 
-    if(GetBit(sec,(uint)idx,(uint)idy,pw)==1 )
+    if(GetBit(pat,(uint)idx,(uint)idy,pw)==1 )
         col = (float3)(1.0f,1.0f,1.0);
     else
         col = (float3)(0.0f,0.0f,0.0f);

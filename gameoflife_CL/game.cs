@@ -30,6 +30,7 @@ namespace Template
         {
             readGoLFile();
             Console.WriteLine("Creating a new buffer with size: " + (pw * ph));
+            Console.WriteLine("Pw: " + pw * 32 + " Ph: " + ph);
             patternData = new OpenCLBuffer<uint>(ocl, pattern);
             secondData = new OpenCLBuffer<uint>(ocl, second);
             
@@ -100,11 +101,11 @@ namespace Template
             // swap buffers
             for (int i = 0; i < pw * ph; i++) second[i] = pattern[i];
         }
-
+        bool swap = false;
         public void Tick()
         {
             GL.Finish();
-            Simulate();
+           // Simulate();
             // clear the screen
             screen.Clear(0);
             // do opencl stuff
@@ -117,18 +118,28 @@ namespace Template
                 kernel.SetArgument(0, buffer);
             }
 
-            kernel.SetArgument(1, patternData);
-            kernel.SetArgument(2, secondData);
+            if (swap)
+            {
+                kernel.SetArgument(1, secondData);
+                kernel.SetArgument(2, patternData);
+                swap = false;
+            }
+            else
+            {
+                kernel.SetArgument(1, patternData);
+                kernel.SetArgument(2, secondData);
+                swap = true;
+            }
             kernel.SetArgument(3, pw);
             kernel.SetArgument(4, ph);
             kernel.SetArgument(5, t);
             t += 0.1f;
 
-            secondData.CopyToDevice();
+            //secondData.CopyToDevice();
 
             // execute kernel
-            long[] workSize = { 512, 512 };
-            long[] localSize = { 32, 4 };
+            long[] workSize = { pw*32 , ph };
+ 
             if (GLInterop)
             {
                 // INTEROP PATH:
@@ -138,7 +149,7 @@ namespace Template
                 // lock the OpenGL texture for use by OpenCL
                 kernel.LockOpenGLObject(image.texBuffer);
                 // execute the kernel
-                kernel.Execute(workSize, localSize);
+                kernel.Execute(workSize);
                 // unlock the OpenGL texture so it can be used for drawing a quad
                 kernel.UnlockOpenGLObject(image.texBuffer);
             }
@@ -150,7 +161,7 @@ namespace Template
                 // is copied to the screen surface, so the template code can show
                 // it in the window.
                 // execute the kernel
-                kernel.Execute(workSize, localSize);
+                kernel.Execute(workSize);
                 // get the data from the device to the host
                 buffer.CopyFromDevice();
                 // plot pixels using the data on the host
@@ -159,6 +170,7 @@ namespace Template
                         screen.pixels[x + y * screen.width] = buffer[x + y * 512];
                     }
             }
+            Console.WriteLine("Frame");
         }
 
         public void Render()

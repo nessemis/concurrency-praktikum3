@@ -1,4 +1,4 @@
-// #define GLINTEROP
+#define GLINTEROP
 
 #ifdef GLINTEROP
 __kernel void device_function( write_only image2d_t a, float t )

@@ -6,13 +6,14 @@ using System.Runtime.InteropServices;
 using Cloo;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using System.IO;
 
 namespace Template {
 
 class Game
 {
 	// when GLInterop is set to true, the fractal is rendered directly to an OpenGL texture
-	bool GLInterop = false;
+	bool GLInterop = true;
 	// load the OpenCL program; this creates the OpenCL context
 	static OpenCLProgram ocl = new OpenCLProgram( "../../program.cl" );
 	// find the kernel named 'device_function' in the program
@@ -28,7 +29,46 @@ class Game
 	{
 		// nothing here
 	}
-	public void Tick()
+
+    uint[] pattern;
+    uint[] second;
+    uint pw, ph; // note: pw is in uints; width in bits is 32 this value.
+
+        public void readGoLFile()
+    {
+        StreamReader sr = new StreamReader("../../data/turing_js_r.rle");
+        uint state = 0, n = 0, x = 0, y = 0;
+        while (true)
+        {
+            String line = sr.ReadLine();
+            if (line == null) break; // end of file
+            int pos = 0;
+            if (line[pos] == '#') continue; /* comment line */
+            else if (line[pos] == 'x') // header
+            {
+                String[] sub = line.Split(new char[] { '=', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                pw = (UInt32.Parse(sub[1]) + 31) / 32;
+                ph = UInt32.Parse(sub[3]);
+                pattern = new uint[pw * ph];
+                second = new uint[pw * ph];
+            }
+            else while (pos < line.Length)
+                {
+                    Char c = line[pos++];
+                    if (state == 0) if (c < '0' || c > '9') { state = 1; n = Math.Max(n, 1); } else n = (uint)(n * 10 + (c - '0'));
+                    if (state == 1) // expect other character
+                    {
+                        if (c == '$') { y += n; x = 0; } // newline
+                        else if (c == 'o') for (int i = 0; i < n; i++) BitSet(x++, y); else if (c == 'b') x += n;
+                        state = n = 0;
+                    }
+                }
+        }
+        // swap buffers
+        for (int i = 0; i < pw * ph; i++) second[i] = pattern[i];
+    }
+
+        public void Tick()
 	{
 		GL.Finish();
 		// clear the screen

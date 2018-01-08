@@ -29,8 +29,10 @@ namespace Template
         public void Init()
         {
             readGoLFile();
-            patternData = new OpenCLBuffer<uint>(ocl, (int)(pw * ph));
-            secondData = new OpenCLBuffer<uint>(ocl, (int)(pw * ph));
+            Console.WriteLine("Creating a new buffer with size: " + (pw * ph));
+            patternData = new OpenCLBuffer<uint>(ocl, pattern, (int)(pw * ph));
+            secondData = new OpenCLBuffer<uint>(ocl, second,(int)(pw * ph));
+            
         }
 
         private static uint[] pattern;
@@ -75,7 +77,11 @@ namespace Template
                     }
             }
             // swap buffers
-            for (int i = 0; i < pw * ph; i++) second[i] = pattern[i];
+            for (int i = 0; i < pw * ph; i++)
+            {
+                second[i] = pattern[i];
+               
+            }
         }
 
         private void Simulate()
@@ -118,9 +124,7 @@ namespace Template
             kernel.SetArgument(5, t);
             t += 0.1f;
 
-            secondData.CopyFromDevice();
            
-
 
             // execute kernel
             long[] workSize = { 512, 512 };

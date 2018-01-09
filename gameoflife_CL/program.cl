@@ -10,10 +10,9 @@ void Simulate( __global uint* pat , __global uint* sec, uint pw, uint ph, uint x
     int height = ph;
     int width = pw * 32;
 
-    pat[yc * pw + xc] = 0U;
-
-   
-    if(yc > height -1 || yc < 1){return;} 
+    if(yc > height -1 || yc < 1){return;}
+	
+	int pat_buf = 0U;
     
     for(int i = 0; i < 32;i++){
         
@@ -29,10 +28,10 @@ void Simulate( __global uint* pat , __global uint* sec, uint pw, uint ph, uint x
                  GetBit(sec,x,     yc + 1,pw) + 
                  GetBit(sec,x + 1, yc + 1,pw);
         if ((GetBit(sec,x, yc ,pw) == 1 && n == 2) || n == 3) 
-            BitSet(pat,x , yc,pw);
-    
+            pat_buf |= 1 << x;
     }
     
+	pat[yc * pw + xc] = pat_buf;
     
     //Set the bit in sec to the one in pat ( not confirmed working)
     //uint x = (pat[yc * pw +(xc>>5)] >> (int)(xc & 31)) & 1U;

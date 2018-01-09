@@ -52,8 +52,8 @@ __kernel void drawing_function( __global int* a ,__global uint* buf, uint pw ,ui
     int idx = get_global_id( 0 );
 	int idy = get_global_id( 1 );
 
-    float xpos = (idx + xoffset ) * scroll - 256 * scroll ;
-    float ypos = (idy + yoffset ) * scroll - 256 * scroll;
+    float xpos = (idx +  ((256 + xoffset) / scroll) ) * scroll - 256 * scroll ;
+    float ypos = (idy + ((256 + yoffset) / scroll) ) * scroll - 256 * scroll;
     
     float3 col = (float3)( 0.f, 0.f, 0.f );
     

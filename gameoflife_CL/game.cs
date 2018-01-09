@@ -93,7 +93,7 @@ namespace Template
         int dragXStart, dragYStart, offsetXStart, offsetYStart;
         public void SetMouseState(int x, int y, int s, bool pressed)
         {
-            scroll = Math.Max(0, 1.0f + s/100.0f);
+            scroll = Math.Max(0.01f, 1.0f + s/100.0f);
             
             if (pressed)
             {
@@ -160,7 +160,7 @@ namespace Template
             //secondData.CopyToDevice();
 
             // execute kernel
-            long[] workSizeUpdate = { pw*32 , ph };
+            long[] workSizeUpdate = { pw , ph };
             long[] workSizeDrawing = { 512, 512 };
 
             updateKernel.Execute(workSizeUpdate);

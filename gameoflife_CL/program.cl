@@ -10,21 +10,28 @@ void Simulate( __global uint* pat , __global uint* sec, uint pw, uint ph, uint x
     int height = ph;
     int width = pw * 32;
 
-    pat[yc * pw + (xc >> 5)] &= ~(1 << (int)(xc & 31));
+    pat[yc * pw + (xc >> 5)] = 0U;
 
-    if(!(xc > width -1 || yc > height -1 || xc < 1 || yc < 1)){ 
-        uint n = GetBit(sec,xc - 1, yc - 1 ,pw) + 
-                 GetBit(sec,xc, yc - 1,pw) + 
-                 GetBit(sec,xc + 1, yc - 1,pw) + 
-                 GetBit(sec,xc - 1, yc,pw) +
-                 GetBit(sec,xc + 1, yc,pw) + 
-                 GetBit(sec,xc - 1, yc + 1,pw) + 
-                 GetBit(sec,xc, yc + 1,pw) + 
-                 GetBit(sec,xc + 1, yc + 1,pw);
-        if ((GetBit(sec,xc, yc ,pw) == 1 && n == 2) || n == 3) 
-            BitSet(pat,xc , yc,pw);
-    }
+   
+    if(yc > height -1 || yc < 1){return;} 
     
+    for(int i = 1; i < 33;i++){
+        
+        uint x = xc*32 + i;
+        if(x < 1 || x > width -1 ){return;}
+        
+        uint n = GetBit(sec,x - 1, yc - 1,pw) + 
+                 GetBit(sec,x,     yc - 1,pw) + 
+                 GetBit(sec,x + 1, yc - 1,pw) + 
+                 GetBit(sec,x - 1, yc,    pw) +
+                 GetBit(sec,x + 1, yc,    pw) + 
+                 GetBit(sec,x - 1, yc + 1,pw) + 
+                 GetBit(sec,x,     yc + 1,pw) + 
+                 GetBit(sec,x + 1, yc + 1,pw);
+        if ((GetBit(sec,x, yc ,pw) == 1 && n == 2) || n == 3) 
+            BitSet(pat,x , yc,pw);
+    
+    }
     
     
     //Set the bit in sec to the one in pat ( not confirmed working)
@@ -52,7 +59,7 @@ __kernel void drawing_function( __global int* a ,__global uint* buf, uint pw ,ui
     int idx = get_global_id( 0 );
 	int idy = get_global_id( 1 );
 
-    float xpos = (idx +  ((256 + xoffset) / scroll) ) * scroll - 256 * scroll ;
+    float xpos = (idx + ((256 + xoffset) / scroll) ) * scroll - 256 * scroll ;
     float ypos = (idy + ((256 + yoffset) / scroll) ) * scroll - 256 * scroll;
     
     float3 col = (float3)( 0.f, 0.f, 0.f );

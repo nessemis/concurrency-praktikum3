@@ -52,7 +52,7 @@ namespace Template
 
         public void readGoLFile()
         {
-            StreamReader sr = new StreamReader("../../data/turing_js_r.rle");
+            StreamReader sr = new StreamReader("../../data/metapixel-galaxy.rle");
             uint state = 0, n = 0, x = 0, y = 0;
             while (true)
             {
@@ -118,6 +118,8 @@ namespace Template
         bool swap = false;
         public void Tick()
         {
+            timer.Restart();
+
             GL.Finish();
            // Simulate();
             // clear the screen
@@ -160,10 +162,6 @@ namespace Template
 
             updateKernel.SetArgument(2, pw);
             updateKernel.SetArgument(3, ph);
-            
-  
-
-            //secondData.CopyToDevice();
 
             // execute kernel
             long[] workSizeUpdate = { pw , ph };
@@ -201,7 +199,9 @@ namespace Template
                         screen.pixels[x + y * screen.width] = buffer[x + y * 512];
                     }
             }
-          
+
+            Console.WriteLine("elapsed time"  + ": " + timer.ElapsedMilliseconds + "ms");
+
         }
 
         public void Render()

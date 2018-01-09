@@ -5,6 +5,8 @@ void BitSet( __global uint* buf, uint x, uint y, uint pw ) { buf[y * pw + (x >> 
 
 uint GetBit( __global uint* buf, uint x, uint y , uint pw) { return (buf[y * pw + (x >> 5)] >> (int)(x & 31)) & 1; }
 
+uint UintGetBit( uint a, uint x) { return (a >> (int)(x & 31)) & 1; }
+
 void Simulate( __global uint* pat , __global uint* sec, uint pw, uint ph, uint xc , uint yc)
 {
     int height = ph;
@@ -12,30 +14,43 @@ void Simulate( __global uint* pat , __global uint* sec, uint pw, uint ph, uint x
 
     if(yc > height -1 || yc < 1){return;}
 	
-	int pat_buf = 0U;
+	uint pat_buf = 0U;
+    uint sec1 =  sec[(yc-1) * pw + (xc)];
+    uint sec2 =  sec[(yc)   * pw + (xc)];
+    uint sec3 =  sec[(yc+1) * pw + (xc)];
     
-    for(int i = 0; i < 32;i++){
+    uint x = xc *32;
+    if(x < 1) return;
+    uint n = GetBit(sec, x - 1, yc - 1 ,pw) + GetBit(sec ,x, yc - 1,pw) + GetBit(sec ,x + 1, yc - 1,pw) + GetBit(sec ,x - 1, yc,pw) +
+        GetBit(sec,x + 1, yc,pw) + GetBit(sec,x - 1, yc + 1,pw) + GetBit(sec,x, yc + 1,pw) + GetBit(sec,x + 1, yc + 1,pw);
+    if ((UintGetBit(sec2,x) == 1 && n == 2) || n == 3) 
+            pat_buf |= 1 << x;
+            
+     x = xc *32 + 31 ;
+     if(x > width -1 ) return;
+     n = GetBit(sec, x - 1, yc - 1 ,pw) + GetBit(sec ,x, yc - 1,pw) + GetBit(sec ,x + 1, yc - 1,pw) + GetBit(sec ,x - 1, yc,pw) +
+        GetBit(sec,x + 1, yc,pw) + GetBit(sec,x - 1, yc + 1,pw) + GetBit(sec,x, yc + 1,pw) + GetBit(sec,x + 1, yc + 1,pw);
+    if ((UintGetBit(sec2,x) == 1 && n == 2) || n == 3) 
+            pat_buf |= 1 << x;
+    
+    for(int i = 1; i < 31;i++){
         
-        uint x = xc*32 + i;
-        if(x < 1 || x > width -1 ){return;}
-        
-        uint n = GetBit(sec,x - 1, yc - 1,pw) + 
-                 GetBit(sec,x,     yc - 1,pw) + 
-                 GetBit(sec,x + 1, yc - 1,pw) + 
-                 GetBit(sec,x - 1, yc,    pw) +
-                 GetBit(sec,x + 1, yc,    pw) + 
-                 GetBit(sec,x - 1, yc + 1,pw) + 
-                 GetBit(sec,x,     yc + 1,pw) + 
-                 GetBit(sec,x + 1, yc + 1,pw);
-        if ((GetBit(sec,x, yc ,pw) == 1 && n == 2) || n == 3) 
+        x = xc*32 + i;
+       
+        n = UintGetBit(sec1,x - 1) + 
+                 UintGetBit(sec1,x) + 
+                 UintGetBit(sec1,x + 1) + 
+                 UintGetBit(sec2,x - 1) +
+                 UintGetBit(sec2,x + 1) + 
+                 UintGetBit(sec3,x - 1) + 
+                 UintGetBit(sec3,x) + 
+                 UintGetBit(sec3,x + 1);
+        if ((UintGetBit(sec2,x) == 1 && n == 2) || n == 3) 
             pat_buf |= 1 << x;
     }
     
 	pat[yc * pw + xc] = pat_buf;
-    
-    //Set the bit in sec to the one in pat ( not confirmed working)
-    //uint x = (pat[yc * pw +(xc>>5)] >> (int)(xc & 31)) & 1U;
-    //sec[yc * pw + (xc >> 5)] ^=  (x ^ sec[yc * pw + (xc >> 5)]) & (1U << (int)(xc & 31));
+
     
 }
 

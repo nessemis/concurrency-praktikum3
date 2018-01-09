@@ -33,9 +33,10 @@ namespace Template
             readGoLFile();
             Console.WriteLine("Creating a new buffer with size: " + (pw * ph));
             Console.WriteLine("Pw: " + pw  + " Ph: " + ph);
-            patternData = new OpenCLBuffer<uint>(ocl, pattern);
-            secondData = new OpenCLBuffer<uint>(ocl, second);
-            
+            patternData = new OpenCLBuffer<uint>(ocl, pattern,17);
+            secondData = new OpenCLBuffer<uint>(ocl, second  , 17);
+            pattern = null;
+            second = null;
         }
 
         private static uint[] pattern;
@@ -131,26 +132,31 @@ namespace Template
             {
                 drawingKernel.SetArgument(0, buffer);
             }
-            drawingKernel.SetArgument(1, secondData);
-            drawingKernel.SetArgument(2, pw);
-            drawingKernel.SetArgument(3, ph);
-            drawingKernel.SetArgument(4, xoffset);
-            drawingKernel.SetArgument(5, yoffset);
-            drawingKernel.SetArgument(6, scroll);
-            Console.WriteLine(scroll);
+
+
             //Set arguments for the update kernel
             if (swap)
             {
+                drawingKernel.SetArgument(1, secondData);
                 updateKernel.SetArgument(0, secondData);
                 updateKernel.SetArgument(1, patternData);
                 swap = false;
             }
             else
             {
+                drawingKernel.SetArgument(1, patternData);
                 updateKernel.SetArgument(0, patternData);
                 updateKernel.SetArgument(1, secondData);
                 swap = true;
             }
+
+
+            drawingKernel.SetArgument(2, pw);
+            drawingKernel.SetArgument(3, ph);
+            drawingKernel.SetArgument(4, xoffset);
+            drawingKernel.SetArgument(5, yoffset);
+            drawingKernel.SetArgument(6, scroll);
+
 
             updateKernel.SetArgument(2, pw);
             updateKernel.SetArgument(3, ph);
@@ -162,7 +168,7 @@ namespace Template
             // execute kernel
             long[] workSizeUpdate = { pw , ph };
             long[] workSizeDrawing = { 512, 512 };
-
+            long[] localSizeDrawing = { 32, 4 };
             updateKernel.Execute(workSizeUpdate);
 
             if (GLInterop)
@@ -174,7 +180,7 @@ namespace Template
                 // lock the OpenGL texture for use by OpenCL
                 drawingKernel.LockOpenGLObject(image.texBuffer);
                 // execute the kernel
-                drawingKernel.Execute(workSizeDrawing);
+                drawingKernel.Execute(workSizeDrawing, localSizeDrawing);
                 // unlock the OpenGL texture so it can be used for drawing a quad
                 drawingKernel.UnlockOpenGLObject(image.texBuffer);
             }

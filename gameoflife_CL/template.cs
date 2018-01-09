@@ -68,8 +68,9 @@ namespace Template
 		}
 		protected override void OnUpdateFrame( FrameEventArgs e )
 		{
-			// called once per frame; app logic
-			var keyboard = OpenTK.Input.Keyboard.GetState();
+            game.Tick();
+            // called once per frame; app logic
+            var keyboard = OpenTK.Input.Keyboard.GetState();
 			if (keyboard[OpenTK.Input.Key.Escape]) this.Exit();
             var mouse = OpenTK.Input.Mouse.GetState();
             Point p = CursorPosition.GetCursorPosition();
@@ -78,7 +79,7 @@ namespace Template
 		protected override void OnRenderFrame( FrameEventArgs e )
 		{
 			// called once per frame; render
-			game.Tick();
+			
 			GL.BindTexture( TextureTarget.Texture2D, screenID );
 			GL.TexImage2D( TextureTarget.Texture2D, 
 						   0, 

@@ -12,14 +12,24 @@ void Simulate( __global uint* pat , __global uint* sec, uint pw, uint ph, uint x
 
     pat[yc * pw + (xc >> 5)] &= ~(1 << (int)(xc & 31));
 
-    if(xc > width -1 || yc > height -1 || xc < 1 || yc < 1){return;} 
-
-
-    uint n = GetBit(sec, xc - 1, yc - 1 ,pw) + GetBit(sec ,xc, yc - 1,pw) + GetBit(sec ,xc + 1, yc - 1,pw) + GetBit(sec ,xc - 1, yc,pw) +
-                GetBit(sec,xc + 1, yc,pw) + GetBit(sec,xc - 1, yc + 1,pw) + GetBit(sec,xc, yc + 1,pw) + GetBit(sec,xc + 1, yc + 1,pw);
-    if ((GetBit(sec,xc, yc ,pw) == 1 && n == 2) || n == 3) BitSet(pat,xc , yc,pw);
-        
-    sec[yc * pw + (xc >> 5)] |=  pat[yc * pw + (xc >> 5)] & (1 << (int)(xc & 31));
+    if(!(xc > width -1 || yc > height -1 || xc < 1 || yc < 1)){ 
+        uint n = GetBit(sec,xc - 1, yc - 1 ,pw) + 
+                 GetBit(sec,xc, yc - 1,pw) + 
+                 GetBit(sec,xc + 1, yc - 1,pw) + 
+                 GetBit(sec,xc - 1, yc,pw) +
+                 GetBit(sec,xc + 1, yc,pw) + 
+                 GetBit(sec,xc - 1, yc + 1,pw) + 
+                 GetBit(sec,xc, yc + 1,pw) + 
+                 GetBit(sec,xc + 1, yc + 1,pw);
+        if ((GetBit(sec,xc, yc ,pw) == 1 && n == 2) || n == 3) 
+            BitSet(pat,xc , yc,pw);
+    }
+    
+    
+    
+    //Set the bit in sec to the one in pat ( not confirmed working)
+    //uint x = (pat[yc * pw +(xc>>5)] >> (int)(xc & 31)) & 1U;
+    //sec[yc * pw + (xc >> 5)] ^=  (x ^ sec[yc * pw + (xc >> 5)]) & (1U << (int)(xc & 31));
     
 }
 
@@ -33,25 +43,31 @@ __kernel void update_function(__global uint* pat, __global uint* sec, uint pw, u
 }
 
 #ifdef GLINTEROP
-__kernel void drawing_function( write_only image2d_t a ,__global uint* buf, uint pw)
+__kernel void drawing_function( write_only image2d_t a ,__global uint* buf, uint pw, uint ph, int xoffset, int yoffset, float scroll)
 #else
-__kernel void drawing_function( __global int* a ,__global uint* buf, uint pw )
+__kernel void drawing_function( __global int* a ,__global uint* buf, uint pw ,uint ph, int xoffset, int yoffset, float scroll )
 #endif
 {
 
     int idx = get_global_id( 0 );
 	int idy = get_global_id( 1 );
 
-	if (idx >= 512 || idy >= 512) return;
+    float xpos = (idx + xoffset ) * scroll - 256 * scroll ;
+    float ypos = (idy + yoffset ) * scroll - 256 * scroll;
+    
+    float3 col = (float3)( 0.f, 0.f, 0.f );
+    
+    //Check not necessary (is done in csharp)
+    if(!(xpos < 0 || ypos < 0 || xpos > pw *32 || ypos > ph)){        
     
     
-	float3 col = (float3)( 0.f, 0.f, 0.f );
 
-    if(GetBit(buf,(uint)idx,(uint)idy,pw)==1 )
+
+    if(GetBit(buf,(uint)xpos,(uint)ypos,pw)==1 )
         col = (float3)(1.0f,1.0f,1.0);
     else
         col = (float3)(0.0f,0.0f,0.0f);
-    
+    }
     
     
     

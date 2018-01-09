@@ -87,21 +87,32 @@ namespace Template
             }
         }
 
-        private void Simulate()
+        uint xoffset = 0, yoffset = 0;
+        bool lastLButtonState = false;
+        float scroll;
+        int dragXStart, dragYStart, offsetXStart, offsetYStart;
+        public void SetMouseState(int x, int y, int s, bool pressed)
         {
-            // clear destination pattern
-            for (int i = 0; i < pw * ph; i++) pattern[i] = 0;
-            // process all pixels, skipping one pixel boundary
-            uint w = pw * 32, h = ph;
-            for (uint y = 1; y < h - 1; y++) for (uint x = 1; x < w - 1; x++)
+            scroll = Math.Max(0, 1.0f + s/100.0f);
+            
+            if (pressed)
+            {
+                if (lastLButtonState)
                 {
-                    // count active neighbors
-                    uint n = GetBit(x - 1, y - 1) + GetBit(x, y - 1) + GetBit(x + 1, y - 1) + GetBit(x - 1, y) +
-                                GetBit(x + 1, y) + GetBit(x - 1, y + 1) + GetBit(x, y + 1) + GetBit(x + 1, y + 1);
-                    if ((GetBit(x, y) == 1 && n == 2) || n == 3) BitSet(x, y);
+                    int deltax = x - dragXStart, deltay = y - dragYStart;
+                    xoffset = (uint)Math.Min(pw * 32 - screen.width, Math.Max(0, offsetXStart - deltax));
+                    yoffset = (uint)Math.Min(ph - screen.height, Math.Max(0, offsetYStart - deltay));
                 }
-            // swap buffers
-            for (int i = 0; i < pw * ph; i++) second[i] = pattern[i];
+                else
+                {
+                    dragXStart = x;
+                    dragYStart = y;
+                    offsetXStart = (int)xoffset;
+                    offsetYStart = (int)yoffset;
+                    lastLButtonState = true;
+                }
+            }
+            else lastLButtonState = false;
         }
         bool swap = false;
         public void Tick()
@@ -122,7 +133,11 @@ namespace Template
             }
             drawingKernel.SetArgument(1, secondData);
             drawingKernel.SetArgument(2, pw);
-            
+            drawingKernel.SetArgument(3, ph);
+            drawingKernel.SetArgument(4, xoffset);
+            drawingKernel.SetArgument(5, yoffset);
+            drawingKernel.SetArgument(6, scroll);
+            Console.WriteLine(scroll);
             //Set arguments for the update kernel
             if (swap)
             {
@@ -135,8 +150,7 @@ namespace Template
                 updateKernel.SetArgument(0, patternData);
                 updateKernel.SetArgument(1, secondData);
                 swap = true;
-            } 
-            
+            }
 
             updateKernel.SetArgument(2, pw);
             updateKernel.SetArgument(3, ph);
@@ -181,7 +195,7 @@ namespace Template
                         screen.pixels[x + y * screen.width] = buffer[x + y * 512];
                     }
             }
-            Console.WriteLine("Frame");
+          
         }
 
         public void Render()

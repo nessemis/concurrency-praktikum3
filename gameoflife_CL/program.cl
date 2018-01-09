@@ -10,12 +10,12 @@ void Simulate( __global uint* pat , __global uint* sec, uint pw, uint ph, uint x
     int height = ph;
     int width = pw * 32;
 
-    pat[yc * pw + (xc >> 5)] = 0U;
+    pat[yc * pw + xc] = 0U;
 
    
     if(yc > height -1 || yc < 1){return;} 
     
-    for(int i = 1; i < 33;i++){
+    for(int i = 0; i < 32;i++){
         
         uint x = xc*32 + i;
         if(x < 1 || x > width -1 ){return;}

@@ -14,7 +14,9 @@ namespace Template
         private static OpenCLProgram ocl = new OpenCLProgram("../../program.cl");
 
         // find the kernel named 'device_function' in the program
-        private OpenCLKernel kernel = new OpenCLKernel(ocl, "device_function");
+        private OpenCLKernel drawingKernel = new OpenCLKernel(ocl, "drawing_function");
+        private OpenCLKernel updateKernel = new OpenCLKernel(ocl, "update_function");
+
 
         // create a regular buffer; by default this resides on both the host and the device
         private OpenCLBuffer<int> buffer = new OpenCLBuffer<int>(ocl, 512 * 512);
@@ -24,13 +26,13 @@ namespace Template
 
         public Surface screen;
         private Stopwatch timer = new Stopwatch();
-        private float t = 21.5f;
+
 
         public void Init()
         {
             readGoLFile();
             Console.WriteLine("Creating a new buffer with size: " + (pw * ph));
-            Console.WriteLine("Pw: " + pw * 32 + " Ph: " + ph);
+            Console.WriteLine("Pw: " + pw  + " Ph: " + ph);
             patternData = new OpenCLBuffer<uint>(ocl, pattern);
             secondData = new OpenCLBuffer<uint>(ocl, second);
             
@@ -108,38 +110,47 @@ namespace Template
            // Simulate();
             // clear the screen
             screen.Clear(0);
-            // do opencl stuff
+            
+            //Set arguments for the drawing kernel
             if (GLInterop)
             {
-                kernel.SetArgument(0, image);
+                drawingKernel.SetArgument(0, image);
             }
             else
             {
-                kernel.SetArgument(0, buffer);
+                drawingKernel.SetArgument(0, buffer);
             }
-
+            drawingKernel.SetArgument(1, secondData);
+            drawingKernel.SetArgument(2, pw);
+            
+            //Set arguments for the update kernel
             if (swap)
             {
-                kernel.SetArgument(1, secondData);
-                kernel.SetArgument(2, patternData);
+                updateKernel.SetArgument(0, secondData);
+                updateKernel.SetArgument(1, patternData);
                 swap = false;
             }
             else
             {
-                kernel.SetArgument(1, patternData);
-                kernel.SetArgument(2, secondData);
+                updateKernel.SetArgument(0, patternData);
+                updateKernel.SetArgument(1, secondData);
                 swap = true;
-            }
-            kernel.SetArgument(3, pw);
-            kernel.SetArgument(4, ph);
-            kernel.SetArgument(5, t);
-            t += 0.1f;
+            } 
+            
+
+            updateKernel.SetArgument(2, pw);
+            updateKernel.SetArgument(3, ph);
+            
+  
 
             //secondData.CopyToDevice();
 
             // execute kernel
-            long[] workSize = { pw*32 , ph };
- 
+            long[] workSizeUpdate = { pw*32 , ph };
+            long[] workSizeDrawing = { 512, 512 };
+
+            updateKernel.Execute(workSizeUpdate);
+
             if (GLInterop)
             {
                 // INTEROP PATH:
@@ -147,11 +158,11 @@ namespace Template
                 // Render method to draw a screen filling quad. This is the fastest
                 // option, but interop may not be available on older systems.
                 // lock the OpenGL texture for use by OpenCL
-                kernel.LockOpenGLObject(image.texBuffer);
+                drawingKernel.LockOpenGLObject(image.texBuffer);
                 // execute the kernel
-                kernel.Execute(workSize);
+                drawingKernel.Execute(workSizeDrawing);
                 // unlock the OpenGL texture so it can be used for drawing a quad
-                kernel.UnlockOpenGLObject(image.texBuffer);
+                drawingKernel.UnlockOpenGLObject(image.texBuffer);
             }
             else
             {
@@ -161,7 +172,7 @@ namespace Template
                 // is copied to the screen surface, so the template code can show
                 // it in the window.
                 // execute the kernel
-                kernel.Execute(workSize);
+                drawingKernel.Execute(workSizeDrawing);
                 // get the data from the device to the host
                 buffer.CopyFromDevice();
                 // plot pixels using the data on the host

@@ -92,17 +92,35 @@ namespace Template
         bool lastLButtonState = false;
         float scroll;
         int dragXStart, dragYStart, offsetXStart, offsetYStart;
+
+        int scroll_min = 0;
+        int scroll_max = 1000;
+        int scroll_offset = 10;
         public void SetMouseState(int x, int y, int s, bool pressed)
         {
-            scroll = Math.Max(0.01f, 1.0f + s/100.0f);
             
+            int d_s = s + scroll_offset;
+
+            if(scroll_max < d_s)
+            {
+                scroll_offset += scroll_max - d_s;
+                d_s = s + scroll_offset;
+            }
+            else if(scroll_min > d_s)
+            {
+                scroll_offset += scroll_min - d_s;
+                d_s = s + scroll_offset;
+            }
+
+            scroll = 0.1f + d_s * d_s / 100.0f;
+
             if (pressed)
             {
                 if (lastLButtonState)
                 {
-                    int deltax = x - dragXStart, deltay = y - dragYStart;
-                    xoffset = (uint)Math.Min(pw * 32 - screen.width, Math.Max(0, offsetXStart - deltax));
-                    yoffset = (uint)Math.Min(ph - screen.height, Math.Max(0, offsetYStart - deltay));
+                    int deltax = (int) ((x - dragXStart) * scroll), deltay = (int) ((y - dragYStart) * scroll);
+                    xoffset = (uint) (offsetXStart - deltax);
+                    yoffset = (uint) (offsetYStart - deltay);
                 }
                 else
                 {

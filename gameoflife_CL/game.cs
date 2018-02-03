@@ -3,10 +3,13 @@ using System;
 using System.Diagnostics;
 using System.IO;
 
+
+
 namespace Template
 {
     internal class Game
     {
+          const string PATH = "../../data/metapixel-galaxy.rle";
         // when GLInterop is set to true, the fractal is rendered directly to an OpenGL texture
         private bool GLInterop = true;
 
@@ -30,11 +33,14 @@ namespace Template
 
         public void Init()
         {
+            //Read the file
             readGoLFile();
-            Console.WriteLine("Creating a new buffer with size: " + (pw * ph));
-            Console.WriteLine("Pw: " + pw  + " Ph: " + ph);
+
+            //Copy the data and make a new buffer on the gpu
             patternData = new OpenCLBuffer<uint>(ocl, pattern,17);
             secondData = new OpenCLBuffer<uint>(ocl, second  , 17);
+           
+            //No longer need the data on the cpu
             pattern = null;
             second = null;
         }
@@ -50,9 +56,10 @@ namespace Template
         private uint GetBit(uint x, uint y)
         { return (second[y * pw + (x >> 5)] >> (int)(x & 31)) & 1U; }
 
+        //Reading the GoL file and put the data in a big buffer 
         public void readGoLFile()
         {
-            StreamReader sr = new StreamReader("../../data/metapixel-galaxy.rle");
+            StreamReader sr = new StreamReader(PATH);
             uint state = 0, n = 0, x = 0, y = 0;
             while (true)
             {
